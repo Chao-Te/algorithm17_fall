@@ -29,32 +29,24 @@ int main(int argc, char** argv)
     float* dyn_table = NULL;
     float* out_pts = NULL;
 
+    // read file
     ifstream infile;
     infile.open(in_file_name); //string to float stof string to int atoi
-     
     getline(infile, str);// get first line
     n_control_pts = atoi(str.c_str());
     dyn_table = new float[n_control_pts*n_control_pts*2];
-    cout << "n_control_pts : " << n_control_pts <<endl;
     for(int i = 0; i < n_control_pts; i++){//set hte first row of table
         getline(infile, str);
         white_pos = str.find(' ');
         dyn_table[i*2] = stof(str.substr(0,white_pos).c_str());
         dyn_table[i*2+1] = stof(str.substr(white_pos+1, str.size()).c_str());
     }
-
     getline(infile, str);
     n_sample_pts = atoi(str.c_str());
-    cout << "n_sample_pts : " << n_sample_pts << endl;
     infile.close();
 
     sample_space = 1.0/float(n_sample_pts-1);
     out_pts = new float[n_sample_pts*2];
-
-    // check first row 
-    for(int i=0; i< n_control_pts ; i++){
-        cout <<dyn_table[i*2] << ' '<< dyn_table[i*2+1]  <<endl;
-    }
 
     // dynamic programming 
     for(int k = 0; k < n_sample_pts ; k++){
@@ -74,10 +66,7 @@ int main(int argc, char** argv)
         }
         out_pts[k*2] = dyn_table[n_control_pts*(n_control_pts-1)*2];
         out_pts[k*2+1] =  dyn_table[n_control_pts*(n_control_pts-1)*2+1];
-        cout << "out point_x = " << dyn_table[n_control_pts*(n_control_pts-1)*2] <<endl;
-        cout << "out point_y = " << dyn_table[n_control_pts*(n_control_pts-1)*2+1] <<endl;
     }
-    cout << "end dyn_table" <<endl;
     
     //write out results
     ofstream outfile;
@@ -88,7 +77,6 @@ int main(int argc, char** argv)
                 <<endl;
     }
     outfile.close();
-    cout << "end writing file" <<endl;
     //release memory
     delete[] dyn_table;
     delete[] out_pts;
