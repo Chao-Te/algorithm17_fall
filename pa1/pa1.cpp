@@ -2,13 +2,8 @@
 #include <string>
 #include <iomanip>
 #include <fstream>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
 
 using namespace std;
-
-
 
 int main(int argc, char** argv)
 {
@@ -76,18 +71,12 @@ int main(int argc, char** argv)
     //write out results
     ofstream outfile;
     outfile.open(out_file_name.c_str());
-    //FILE* fp = fopen( out_file_name.c_str(), "w" ); 
-    //cout << "writing file" <<endl;
     for(int i = 0; i < n_sample_pts; i++){
         outfile << setprecision(2) << fixed << out_pts[i*2] << '\t'
                 << setprecision(2) << fixed << out_pts[i*2+1]
                 <<endl;
-        //cout << out_pts[i*2] <<endl;
-        //fprintf(fp, "%2f\t%2f\n", out_pts[i*2], out_pts[i*2+1]);
     }
-    //fclose(fp);
     outfile.close();
-    //release memory
     delete[] dyn_table;
     delete[] out_pts;
 
