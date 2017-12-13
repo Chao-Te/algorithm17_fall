@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "iosfwd": "cpp",
+        "memory": "cpp",
+        "vector": "cpp",
+        "istream": "cpp",
+        "iterator": "cpp",
+        "__split_buffer": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
