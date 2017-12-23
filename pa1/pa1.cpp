@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     getline(infile, str);// get first line
     n_control_pts = atoi(str.c_str());
     dyn_table = new double[n_control_pts*n_control_pts*2];
-    for(int i = 0; i < n_control_pts; i++){//set hte first row of table
+    for(int i = 0; i < n_control_pts; i++){//set the first row of table
         getline(infile, str);
         white_pos = str.find(' ');
         dyn_table[i*2] = stof(str.substr(0,white_pos).c_str());

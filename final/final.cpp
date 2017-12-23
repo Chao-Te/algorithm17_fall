@@ -28,7 +28,8 @@ public:
         m_to_direction = to_direction;
         m_occupy_blocks = occupy_blocks;
     }
-    ~Car();
+    ~Car(){
+    }
 
     //data member
     char m_to_direction;
@@ -61,11 +62,11 @@ Car* readfile(const string& in_file_name, vector<Car*>* in_cars){
     for(int i = 2; i < str1.size(); i+=3){ 
         if (str1[i] == 'S')
             c= new Car('S', 5);
-        else if (str[i] == 'W')
+        else if (str1[i] == 'W')
             c = new Car('W', 1);
-        else if (str[i] == 'E')
+        else if (str1[i] == 'E')
             c = new Car('E', 13);
-        else if (str[i] == '0',0)
+        else if (str1[i] == '0')
             c = c_null;
         in_cars[0].push_back(c);
     }
@@ -87,12 +88,13 @@ Car* readfile(const string& in_file_name, vector<Car*>* in_cars){
     for (int i = 0; i < str1.size(); i+=3){
         if (str1[i] == 'N')
             c = new Car('N',10);
-        else if (str[i] == 'E')
+        else if (str1[i] == 'E')
             c = new Car('E', 8);
-        else if (str[i] == 'W')
+        else if (str1[i] == 'W')
             c = new Car('W', 11);
-        else if (str[i] == '0')
+        else if (str1[i] == '0')
             c = c_null;
+        in_cars[2].push_back(c);
     }
     // car from W
     str1 = str[3].substr(2, str[3].size());
@@ -103,9 +105,9 @@ Car* readfile(const string& in_file_name, vector<Car*>* in_cars){
             c = new Car('S', 4);
         else if (str1[i] == 'E')
             c = new Car('E', 12);
-        else if (str[i] == '0')
-            c = c_null
-        in_cars.push_back(c);
+        else if (str1[i] == '0')
+            c = c_null;
+        in_cars[3].push_back(c);
     }
     return c_null;
 }
@@ -119,10 +121,10 @@ void outfile(const string& out_file_name, vector<Car*>* out_cars){
         else              outfile << "W:";
 
         for (int i = 0; i < out_cars[0].size() ; i++){
-            if out_cars[0][i].m_to_direction == '0':
+            if (out_cars[0][i]->m_to_direction == '0')
                 outfile << " 00";
             else{
-                coutfile << " 1" << out_cars[0][i].m_to_direction;
+                outfile << " 1" << out_cars[0][i]->m_to_direction;
                 delete out_cars[0][i];
             } 
         }
@@ -139,7 +141,7 @@ int bit2int(char blocks){
     }
     return num;
 }
-void check_2_cars(Car* cars,int* records){
+void check_2_cars(Car** cars,int* records){
     // i = 0, j = 1, N&E records[1]
     // i = 0, j = 2, N&S records[2]
     // i = 0, j = 3, N&W records[3]
@@ -149,10 +151,10 @@ void check_2_cars(Car* cars,int* records){
     int r_idx = 1;
     for(int i = 0; i < 4; i++){
         for (int j = i+1; j < 4; j++){
-            if(int(cars[i].m_occupy_blocks & cars[j].m_occupy_blocks) > 0)  
+            if(int(cars[i]->m_occupy_blocks & cars[j]->m_occupy_blocks) > 0)  
                 records[r_idx] = -1;
             else    
-                records[r_idx] = bit2int(cars[i].m_occupy_blocks | cars[j].m_occupy_blocks)
+                records[r_idx] = bit2int(cars[i]->m_occupy_blocks | cars[j]->m_occupy_blocks);
         }
     }
     // check N & E & S
@@ -164,16 +166,16 @@ void check_2_cars(Car* cars,int* records){
     //check E & S & W||
     if (records[4] == -1 || records[5] == -1 || records[6] == -1) records[9] = -1;   
 }
-void check_3_cars(Cars* cars, int* records){
+void check_3_cars(Car** cars, int* records){
     // N & E & S
     if (records[6] != -1)
-        records[6] = bit2int(cars[0]| cars[1] | cars[2]);
+        records[6] = bit2int(cars[0]->m_occupy_blocks| cars[1]->m_occupy_blocks | cars[2]->m_occupy_blocks);
     if (records[7] != -1)
-        records[7] = bit2int(cars[0]| cars[1] | cars[3]);
+        records[7] = bit2int(cars[0]->m_occupy_blocks| cars[1]->m_occupy_blocks | cars[3]->m_occupy_blocks);
     if (records[8] != -1)
-        records[8] = bit2int(cars[0]| cars[2] | cars[3]);
+        records[8] = bit2int(cars[0]->m_occupy_blocks| cars[2]->m_occupy_blocks | cars[3]->m_occupy_blocks);
     if (records[9] != -1)
-        records[9] = bit2int(cars[1]| cars[2] | cars[3]);
+        records[9] = bit2int(cars[1]->m_occupy_blocks| cars[2]->m_occupy_blocks | cars[3]->m_occupy_blocks);
     for (int i = 0; i < 4 ; i++){
         if (records[i] == -1){
             records[10] = -1;
@@ -208,6 +210,8 @@ int choose_cars(int * records){
         return (1+4);
     if (records[0] != -1)
         return (1+2);
+    else 
+        return -1;
     
 }
 void alg1(vector<Car*>* in_cars, vector<Car*>* out_cars, Car* c_null){
@@ -224,7 +228,8 @@ void alg1(vector<Car*>* in_cars, vector<Car*>* out_cars, Car* c_null){
 
     int num_cars = in_cars[0].size();
     int t_cars = 0;// cars to move forward
-    Car cars[4]; // cars from north, east, south, west
+    Car** cars; // cars from north, east, south, west
+    cars = new Car* [4];
     bool cars_empty[4];
     bool all_empty = false;
     for (int i = 0; i < 4; i++)
@@ -236,7 +241,7 @@ void alg1(vector<Car*>* in_cars, vector<Car*>* out_cars, Car* c_null){
             if (cars_empty[i])
                 cars[i] = c_null;
             else
-                cars[i] = in_cars[i][0]
+                cars[i] = in_cars[i][0];
         }
     
         check_2_cars(cars, records);
@@ -244,33 +249,34 @@ void alg1(vector<Car*>* in_cars, vector<Car*>* out_cars, Car* c_null){
         check_3_cars(cars, records);
         // check_4_cars
         if (records[10]!= -1){
-            records[10] = bit2int(cars[0].m_occupy_blocks | cars[1].m_occupy_blocks | 
-                                  cars[2].m_occupy_blocks | cars[3].m_occupy_blocks);
+            records[10] = bit2int(cars[0]->m_occupy_blocks | cars[1]->m_occupy_blocks | 
+                                  cars[2]->m_occupy_blocks | cars[3]->m_occupy_blocks);
         }
 
         t_cars = choose_cars(records);
 
         for (int i = 0; i < 4; i++){
             if (cars_empty[i]){ // no more car in line
-                out_cars[i].append(c_null);
+                out_cars[i].push_back(c_null);
             }
             else if (in_cars[i][0] == c_null || t_cars%2) { //// no car waiting there now
-                in_cars[i].erase(0);
-                out_cars[i].append(cars[i]);
+                in_cars[i].erase(in_cars[i].begin());
+                out_cars[i].push_back(cars[i]);
             }
             else{
                 cout << "something wrong when assigning cars" <<endl;
             }
-            t_cars >> 1;
+            t_cars = t_cars >> 1;
         }
 
         // clear record, and reset memory
         all_empty = true;
-        for (int i = 0; i < 11; i++)
+        for (int i = 0; i < 11; i++){
             records[i] = 0;
-            c_empty[i] = in_cars[i].empty();
-            if (!c_empty[i])
+            cars_empty[i] = in_cars[i].empty();
+            if (!cars_empty[i])
                 all_empty = false;
+        }
         t_cars = 0;
     }   
 }
@@ -285,11 +291,11 @@ int main(int argc, char** argv)
     
     Car* c_null;
 
-    c_null = readfile(in_file_name, in_cars)
+    c_null = readfile(in_file_name, in_cars);
     
     // reserve memory for vector
-    for (int i = 0; i < 4: i++)
-        out_cars.reserve(in_cars[0].size()*4);
+    for (int i = 0; i < 4; i++)
+        out_cars[i].reserve(in_cars[0].size()*4);
 
     // do algo
     alg1(in_cars, out_cars, c_null);
