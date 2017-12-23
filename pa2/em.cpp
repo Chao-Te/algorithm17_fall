@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <math>
+#include <cmath>
 #include <algorithm>
 
 using namespace std;
@@ -20,7 +20,7 @@ public:
     }
     void printNode(){
         cout << "(x, y, f) = ("<< m_x << ", " 
-             << m_y << ", " << f << ")" << endl;
+             << m_y << ", " << m_flow << ")" << endl;
     }
     //data member
     int m_x;
@@ -42,7 +42,7 @@ public:
     }
 
     void setEdge(const Node& source, const Node& sink){
-        m_capacity = max(source.m_flow, sink.m_flow);
+        m_capacity = min(source.m_flow, sink.m_flow);
         m_size = 0;
         m_dst = abs(source.m_x - sink.m_x) + abs(source.m_y - sink.m_y);
         m_forward = 0;
@@ -50,13 +50,13 @@ public:
     }
     void printEdge(){
         cout << "(capacity, size, dist, forward, backward) = ("
-             << m_capacity << ", " << m_size << ", " << m_dist << ", " 
+             << m_capacity << ", " << m_size << ", " << m_dst << ", " 
              << m_forward << ", " << m_backward << ")" <<endl;
     }
     // data member
     int m_capacity;
     int m_size;
-    int m_dist;
+    int m_dst;
     int m_forward;
     int m_backward;
 };
@@ -89,12 +89,12 @@ public:
         m_sinks.reserve(n_nodes);
         for (int i = 0; i < n_nodes; i++){
             infile >> x_cord >> y_cord >> flow;
-            cout << "x = " << x_cord << ", y = " << y_cord << ", flow = " << flow <<endl;
+            //cout << "x = " << x_cord << ", y = " << y_cord << ", flow = " << flow <<endl;
             if (flow > 0 ){// read a source node
-                m_sources.append(Node(x_cord, y_cord, flow);
+                m_sources.push_back(Node(x_cord, y_cord, flow));
             }
             else {
-                m_sinks.append(Node(x_cord, y_cord, abs(flow)));
+                m_sinks.push_back(Node(x_cord, y_cord, abs(flow)));
             }
         }
         m_n_sources = m_sources.size();
@@ -104,7 +104,7 @@ public:
             for(int j = 0; j < m_n_sinks; j++){
                 m_G[row+j].setEdge(m_sources[i], m_sinks[j]);
             }
-            row += m_n_sources;
+            row += m_n_sinks;
         }
     }
     void printGraph(){
@@ -117,11 +117,12 @@ public:
         for(int i = 0; i < m_n_sinks; i++)
             m_sinks[i].printNode();
         int row = 0;
+        cout << "*****************print Graph matrix*****************" << endl;
         for(int i = 0; i < m_n_sources; i++){
             for(int j = 0; j< m_n_sinks; j++){
-                m_G[i][j].printEdge();
+                m_G[row+j].printEdge();
             }
-            row += m_n_sources;
+            row += m_n_sinks;
         }
 
     }
@@ -149,7 +150,7 @@ int main(int argc, char** argv)
 
     G.constructGraph(in_file_name);
     G.printGraph();
-    
+
     return 0;
     
 }
