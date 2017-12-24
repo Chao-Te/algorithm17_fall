@@ -8,6 +8,11 @@
         "cmath": "cpp",
         "algorithm": "cpp",
         "chrono": "cpp",
-        "limits": "cpp"
-    }
+        "limits": "cpp",
+        "memory": "cpp",
+        "utility": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
