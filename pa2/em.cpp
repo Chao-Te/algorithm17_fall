@@ -8,8 +8,8 @@
 
 using namespace std;
 
-typedef multimap<const int, int>   edgeMap;
-typedef pair<const int, int>  edgePair;
+typedef multimap<const int, const int>   edgeMap;
+typedef pair<const int, const int>  edgePair;
 
 class Node
 {
@@ -169,7 +169,6 @@ public:
         }
     }
 
-
     void updateflow(){// update size
     }
 
@@ -197,7 +196,7 @@ public:
         }
 
     }
-
+    
     int computeArea(){
         int row = 0;
         int area = 0;
