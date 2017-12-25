@@ -266,21 +266,16 @@ public:
                     pos = j;
                     
                     for (int i = m_n_sources+m_n_sinks+1; i>=1; i--){
-                        // debugging
-                        if(pos == 0){
-                            cout << "something wierd" << endl;
-                        }
-                        cout << "pos = " << pos << endl;
                         hits[pos] = true;
                         row = i*n_col;
                         cycle_node.push_back(pos-1);
                         if (pos <= m_n_sources ){ // it is a sources, and forward
-                            cout <<  "it is source" <<endl;
+                            //cout <<  "it is source" <<endl;
                             if (min_value > m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward)
                                 min_value = m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward;
                         }
                         else{// it is a sink and backward
-                            cout << "it is sink" <<endl; 
+                            //cout << "it is sink" <<endl; 
                             if (min_value > m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_backward)
                                 min_value = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_backward;
                         }
@@ -297,8 +292,6 @@ public:
                 }
                 pos += (m_n_sources+m_n_sinks+2);
             }
-            // debugging message
-            break;
         }   
         delete[] hits;
         
