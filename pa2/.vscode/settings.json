@@ -23,7 +23,11 @@
         "ratio": "cpp",
         "system_error": "cpp",
         "tuple": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "__tree": "cpp",
+        "initializer_list": "cpp",
+        "map": "cpp",
+        "string_view": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
