@@ -144,7 +144,7 @@ public:
             }
         }
         
-
+        // setup edge graph
         m_n_sources = m_sources.size();
         m_n_sinks = m_sinks.size();
         m_G = new Edge [m_n_sources*m_n_sinks];
@@ -157,7 +157,7 @@ public:
             row += m_n_sinks;
         }
 
-        // set up initial flow 
+        // set up initial flow, greedy
         for (edgeMap::iterator it=emap.begin(); it!=emap.end(); ++it){
             pos = it->second;
             y_cord = pos/m_n_sinks;
