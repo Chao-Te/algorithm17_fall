@@ -254,7 +254,7 @@ public:
                 }
 
             }
-            printTable();
+            //printTable();
             min_value = 10000000;
             // check negative cycle
             for(int j = 0; j < n_col; j++){
@@ -285,10 +285,9 @@ public:
                             cout << "time to eliminate negative cycle" <<endl;
                             cycle_node.push_back(pos-1);
                             updateflow(cycle_node, min_value);
+                            break;
                         }
                     }
-
-                    break;
                 }
                 pos += (m_n_sources+m_n_sinks+2);
             }
@@ -319,9 +318,9 @@ public:
     void updateflow(const vector<int>& cycle_node, const int& min_flow){// update flow
         int head = 0;
         int tail = 0; 
-        for (int i = 0; i < cycle_node.size(); i++){
-            cout << cycle_node[i] << endl;
-        }
+        //for (int i = 0; i < cycle_node.size(); i++){
+        //    cout << cycle_node[i] << endl;
+        //}
         //cout << "min_flow = " << min_flow <<endl;
         for(int i = 0; i < cycle_node.size()-1; i++ ){
             if (cycle_node[i] < m_n_sources){//source and forward
@@ -462,8 +461,8 @@ int main(int argc, char** argv)
 
     G.constructGraph(in_file_name);
     cout << "total flow when reading Graph : " << G.m_total_flow <<endl;
-    G.printGraph(); // correct
-    G.check();
+    //G.printGraph(); // correct
+    //G.check();
     G.run();
     G.writeGraph(out_file_name);
     cout << "total flow after ALGORITHM Graph : " << G.m_total_flow <<endl;
