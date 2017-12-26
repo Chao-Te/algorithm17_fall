@@ -240,9 +240,9 @@ public:
                     min_value = m_dyn_table[pos].m_value;
                     idx = j;
                     for(int k = 0; k < m_n_sources; k++){
-
+			
                         pos = k*m_n_sinks + (j-1-m_n_sources);
-                        if (m_G[pos].m_size != 0){
+			            if (m_G[pos].m_size != 0){
                             nei_value = m_dyn_table[row + (k+1)].m_value - m_G[pos].m_dst;
                             if (nei_value < min_value){
                                 min_value = nei_value;
@@ -257,13 +257,14 @@ public:
 
             }
             //printTable();
+            //printGraph();
             min_value = 10000000;
             // check negative cycle
-            for(int j = 0; j < n_col; j++){
+            for(int j = 1; j < n_col; j++){
                 if (m_dyn_table[(n_row-2)*n_col+j].m_value != m_dyn_table[(n_row-1)*n_col+j].m_value){
                     // negative cycle exits
                     neg_cycle = true;
-                    cout  << "Found negative cycle" <<endl;
+                    //cout  << "Found negative cycle" <<endl;
                     // trace back
                     pos = j;
                     
@@ -284,7 +285,7 @@ public:
                         pos = m_dyn_table[row + pos].m_idx;
                         
                         if (hits[pos]){
-                            cout << "time to eliminate negative cycle" <<endl;
+                            //cout << "time to eliminate negative cycle" <<endl;
                             cycle_node.push_back(pos-1);
                             while(cycle_node[cycle_node.size()-1] != cycle_node[0]){
                                 cycle_node.erase(cycle_node.begin());
@@ -292,13 +293,13 @@ public:
                             updateflow(cycle_node, min_value);
                             break;
                         }
-                    }
+                    }	
                     if(neg_cycle)
                         break;
                 }
                 pos += (m_n_sources+m_n_sinks+2);
             }
-            cout << "End find negative cycle!!" << endl;
+            //cout << "End find negative cycle!!" << endl;
         }   
         delete[] hits;
         
@@ -326,10 +327,8 @@ public:
     void updateflow(const vector<int>& cycle_node, const int& min_flow){// update flow
         int head = 0;
         int tail = 0; 
-        //for (int i = 0; i < cycle_node.size(); i++){
-        //    cout << cycle_node[i] << endl;
-        //}
-        //cout << "min_flow = " << min_flow <<endl;
+        int cost = 0;
+        int removed = false;
         for(int i = 0; i < cycle_node.size()-1; i++ ){
             if (cycle_node[i] < m_n_sources){//source and forward
                 
@@ -346,7 +345,7 @@ public:
                 m_G[head*m_n_sinks+tail].updateflow(min_flow, false);
             }
         }
-
+        //cout << "Area after update = " << computeArea() <<endl;
     }
 
     void printGraph(){// DEBUGGING FUNCTION
@@ -473,7 +472,7 @@ int main(int argc, char** argv)
     //G.check();
     G.run();
     //G.printGraph();
-    G.check();
+    //G.check();
     G.writeGraph(out_file_name);
     cout << "total flow after algorithm Graph : " << G.m_total_flow <<endl;
     return 0;
