@@ -65,18 +65,18 @@ public:
         m_size = 0;
         m_dst = abs(source.m_x - sink.m_x) + abs(source.m_y - sink.m_y);
         m_forward = 0;
-        m_backward = 0;
+        //m_backward = 0;
     }
     void printEdge(){
         cout << "(capacity, size, dist, forward, backward) = ("
              << m_capacity << ", " << m_size << ", " << m_dst << ", " 
-             << m_forward << ", " << m_backward << ")" <<endl;
+             << m_forward << ", " << m_size << ")" <<endl;
     }
     int getArea(){
         return m_size*m_dst;
     }
     void set1res(){
-        m_backward = m_size;
+        //m_backward = m_size;
         m_forward = m_capacity - m_size;
     }
 
@@ -86,14 +86,14 @@ public:
         else
             m_size-=min_flow;
         m_forward = m_capacity - m_size;
-        m_backward = m_size;
+        //m_backward = m_size;
     }
     // data member
     int m_capacity;
     int m_size;
     int m_dst;
     int m_forward;  // source -> sink
-    int m_backward; // sink   -> source
+    //int m_backward; // sink   -> source
 };
 
 class Graph
@@ -209,8 +209,10 @@ public:
             neg_cycle = false;
 
             cycle_node.clear();
+            cycle_node.reserve(n_row);
             // construct table
             for (int i = 2; i < n_row; i++){
+                row = (i-1)*n_col;
                 // check sources( col = [1, m_n_sources+1) 
                 for(int j = 1; j < 1+m_n_sources; j++){
                     pos = (i-1)*n_col + j; // position for previous m_dyn_table
@@ -219,7 +221,7 @@ public:
                     pos = (j-1)*m_n_sinks;// position for m_G
                     for(int k = 0; k < m_n_sinks; k++){
                         if (m_G[pos].m_forward != 0){
-                            nei_value = m_dyn_table[(i-1)*n_col + (1 + m_n_sources + k)].m_value + m_G[pos].m_dst;
+                            nei_value = m_dyn_table[row + (1 + m_n_sources + k)].m_value + m_G[pos].m_dst;
                             if (nei_value < min_value){
                                 min_value = nei_value;
                                 idx = 1 + m_n_sources + k;
@@ -240,21 +242,21 @@ public:
                     for(int k = 0; k < m_n_sources; k++){
 
                         pos = k*m_n_sinks + (j-1-m_n_sources);
-                        if (m_G[pos].m_backward != 0){
-                            nei_value = m_dyn_table[(i-1)*n_col + (k+1)].m_value - m_G[pos].m_dst;
+                        if (m_G[pos].m_size != 0){
+                            nei_value = m_dyn_table[row + (k+1)].m_value - m_G[pos].m_dst;
                             if (nei_value < min_value){
                                 min_value = nei_value;
                                 idx = 1+k;
                             }
                         }
                     }
-                    pos = i*n_col + j;
+                    pos = row + n_col + j;
                     m_dyn_table[pos].m_value = min_value;
                     m_dyn_table[pos].m_idx = idx;
                 }
 
             }
-            //printTable();
+            printTable();
             min_value = 10000000;
             // check negative cycle
             for(int j = 0; j < n_col; j++){
@@ -276,8 +278,8 @@ public:
                         }
                         else{// it is a sink and backward
                             //cout << "it is sink" <<endl; 
-                            if (min_value > m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_backward)
-                                min_value = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_backward;
+                            if (min_value > m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size)
+                                min_value = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size;
                         }
                         pos = m_dyn_table[row + pos].m_idx;
                         
@@ -318,10 +320,10 @@ public:
     void updateflow(const vector<int>& cycle_node, const int& min_flow){// update flow
         int head = 0;
         int tail = 0; 
-        //for (int i = 0; i < cycle_node.size(); i++){
-        //    cout << cycle_node[i] << endl;
-        //}
-        //cout << "min_flow = " << min_flow <<endl;
+        for (int i = 0; i < cycle_node.size(); i++){
+            cout << cycle_node[i] << endl;
+        }
+        cout << "min_flow = " << min_flow <<endl;
         for(int i = 0; i < cycle_node.size()-1; i++ ){
             if (cycle_node[i] < m_n_sources){//source and forward
                 
@@ -461,10 +463,10 @@ int main(int argc, char** argv)
 
     G.constructGraph(in_file_name);
     cout << "total flow when reading Graph : " << G.m_total_flow <<endl;
-    //G.printGraph(); // correct
-    //G.check();
+    G.printGraph(); // correct
+    G.check();
     G.run();
     G.writeGraph(out_file_name);
-    cout << "total flow after ALGORITHM Graph : " << G.m_total_flow <<endl;
+    cout << "total flow after algorithm Graph : " << G.m_total_flow <<endl;
     return 0;
 }
