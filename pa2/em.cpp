@@ -11,20 +11,8 @@ using namespace std;
 
 typedef multimap<const int, const int>   edgeMap;
 typedef pair<const int, const int>  edgePair;
-//typedef pair<int, int> Bin;
-
-class Bin
-{
-public:
-    Bin(){
-        m_idx = 0;
-        m_value = 0;
-    }
-    ~Bin(){}
-    int m_idx;
-    int m_value;
-
-};
+typedef pair<const int, const bool> cyclePair;
+typedef pair<int, int> Bin;
 
 class Node
 {
@@ -67,7 +55,7 @@ public:
 class Edge
 {
 public:
-    // member function
+    // member function    
     Edge(){
         m_capacity = 0;
         m_size = 0;
@@ -78,6 +66,16 @@ public:
         m_t_x = 0;
         m_t_y = 0; 
     }
+    //Edge(const Node& source, const Node& sink){
+    //    m_capacity = 0;
+    //    m_size = 0;
+    //    m_dst = 0;
+    //    m_forward = 0;
+    //    m_s_x = 0;
+    //    m_s_y = 0;
+    //    m_t_x = 0;
+    //    m_t_y = 0; 
+    //}
 
     ~Edge(){
     }
@@ -137,8 +135,8 @@ public:
     // data member
     int m_capacity;
     int m_size;
-    int m_dst;
     int m_forward;  // source -> sink
+    int m_dst;
     int m_s_x;
     int m_s_y;
     int m_t_x;
@@ -175,16 +173,14 @@ public:
         infile.open(in_file_name.c_str()); //string to float stof string to int atoi
         getline(infile, str);// get first line
         n_nodes = atoi(str.c_str());
-        //cout << "number of nodes = " << n_nodes <<endl;
+        
         // reserve memory for speed issue
         m_sources.reserve(n_nodes);
         m_sinks.reserve(n_nodes);
         for (int i = 0; i < n_nodes; i++){
             infile >> x_cord >> y_cord >> flow;
-            //cout << "x = " << x_cord << ", y = " << y_cord << ", flow = " << flow <<endl;
             if (flow > 0 ){// read a source node
                 m_sources.push_back(Node(x_cord, y_cord, flow));
-                m_total_flow += flow;
             }
             else {
                 m_sinks.push_back(Node(x_cord, y_cord, abs(flow)));
@@ -192,7 +188,6 @@ public:
         }
         sort(m_sources.begin(), m_sources.end());
         sort(m_sinks.begin(), m_sinks.end());
-
         // setup edge graph
         m_n_sources = m_sources.size();
         m_n_sinks = m_sinks.size();
@@ -206,7 +201,7 @@ public:
             }
             row += m_n_sinks;
         }
-
+        
         // set up initial flow, greedy
         for (edgeMap::iterator it=emap.begin(); it!=emap.end(); ++it){
             pos = it->second;
@@ -226,266 +221,34 @@ public:
         }
 
         // set initial residual graph
-        for(row = 0; row < m_n_sources * m_n_sinks; row += m_n_sinks){
-            for(int j = 0; j < m_n_sinks; j++){
-                m_G[row+j].set1res();
-            }
+        for(int i = 0; i < m_n_sources * m_n_sinks; i++){    
+            m_G[i].set1res();
         }
 
         // construct dynamic table for finding negative cycle
         m_dyn_table = new Bin[(m_n_sources+m_n_sinks+1)*(m_n_sources+m_n_sinks+2)];
     }
-    /*
+
     void run(){
         cout << "in run" <<endl;
         int n_row = 2 + m_n_sources + m_n_sinks;
         int n_col = 1 + m_n_sources + m_n_sinks;
         int row = 0;
         int pos = 0;
-        int min_value;
-        int nei_value;
-        int idx;
-        vector<int> cycle_node;
-        bool neg_cycle = true;
-        bool* hits = new bool[1+m_n_sources+m_n_sinks];
-        
-        //bell-forman, matrix.shape = (m_n_sources+m_n_sinks+1, (m_n_sources+m_n_sinks+2))
-        while(neg_cycle){
-            for (int i = 0; i < 1+m_n_sources+m_n_sinks; i++)
-                hits[i] = false;
-            
-            neg_cycle = false;
-
-            cycle_node.clear();
-            cycle_node.reserve(n_row);
-            // construct table
-            for (int i = 2; i < n_row; i++){
-                row = (i-1)*n_col;
-                // check sources( col = [1, m_n_sources+1) 
-                for(int j = 1; j < 1+m_n_sources; j++){
-                    pos = (i-1)*n_col + j; // position for previous m_dyn_table
-                    min_value = m_dyn_table[pos].m_value;
-                    idx = j;
-                    pos = (j-1)*m_n_sinks;// position for m_G
-                    for(int k = 0; k < m_n_sinks; k++){
-                        if (m_G[pos].m_forward != 0){
-                            nei_value = m_dyn_table[row + (1 + m_n_sources + k)].m_value + m_G[pos].m_dst;
-                            if (nei_value < min_value){
-                                min_value = nei_value;
-                                idx = 1 + m_n_sources + k;
-                            }
-                        }
-                        pos ++;
-                    }
-                    pos = i*n_col + j;
-                    m_dyn_table[pos].m_value = min_value;
-                    m_dyn_table[pos].m_idx = idx;
-                }
-
-                //check sinks (row = [m_n_source+1, m_source+m_n_sinks+1)
-                for(int j = 1+m_n_sources; j < n_col; j++){
-                    pos = (i-1)*n_col + j;
-                    min_value = m_dyn_table[pos].m_value;
-                    idx = j;
-                    for(int k = 0; k < m_n_sources; k++){
-			
-                        pos = k*m_n_sinks + (j-1-m_n_sources);
-			            if (m_G[pos].m_size != 0){
-                            nei_value = m_dyn_table[row + (k+1)].m_value - m_G[pos].m_dst;
-                            if (nei_value < min_value){
-                                min_value = nei_value;
-                                idx = 1+k;
-                            }
-                        }
-                    }
-                    pos = row + n_col + j;
-                    m_dyn_table[pos].m_value = min_value;
-                    m_dyn_table[pos].m_idx = idx;
-                }
-
-            }
-            printTable();
-            //printGraph();
-            min_value = 10000000;
-            // check negative cycle
-            for(int j = 1; j < n_col; j++){
-                if (m_dyn_table[(n_row-2)*n_col+j].m_value != m_dyn_table[(n_row-1)*n_col+j].m_value){
-                    // negative cycle exits
-                    neg_cycle = true;
-                    //cout  << "Found negative cycle" <<endl;
-                    // trace back
-                    pos = j;
-                    
-                    for (int i = m_n_sources+m_n_sinks+1; i>=1; i--){
-                        hits[pos] = true;
-                        row = i*n_col;
-                        cycle_node.push_back(pos-1);
-                        if (pos <= m_n_sources ){ // it is a sources, and forward
-                            //cout <<  "it is source" <<endl;
-                            if (min_value > m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward)
-                                min_value = m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward;
-                        }
-                        else{// it is a sink and backward
-                            //cout << "it is sink" <<endl; 
-                            if (min_value > m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size)
-                                min_value = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size;
-                        }
-                        pos = m_dyn_table[row + pos].m_idx;
-                        
-                        if (hits[pos]){
-                            //cout << "time to eliminate negative cycle" <<endl;
-                            cycle_node.push_back(pos-1);
-                            while(cycle_node[cycle_node.size()-1] != cycle_node[0]){
-                                cycle_node.erase(cycle_node.begin());
-                            }
-                            updateflow(cycle_node, min_value);
-                            break;
-                        }
-                    }	
-                    if(neg_cycle)
-                        break;
-                }
-                pos += (m_n_sources+m_n_sinks+2);
-            }
-            //cout << "End find negative cycle!!" << endl;
-        }   
-        delete[] hits;
-        
-        
-    }*/
-    /*
-    void run2(){
-        cout << "in run" <<endl;
-        int n_row = 2 + m_n_sources + m_n_sinks;
-        int n_col = 1 + m_n_sources + m_n_sinks;
-        int row = 0;
-        int pos = 0;
         int pos2 = 0;
         int min_value;
         int nei_value;
-        int idx;
-        vector<int> cycle_node;
         bool neg_cycle = true;
         bool* hits = new bool[1+m_n_sources+m_n_sinks];
+        vector<int> cycle_node;
         
         //bell-forman, matrix.shape = (m_n_sources+m_n_sinks+1, (m_n_sources+m_n_sinks+2))
         while(neg_cycle){
             for (int i = 0; i < 1+m_n_sources+m_n_sinks; i++)
                 hits[i] = false;
-            
             neg_cycle = false;
-
             cycle_node.clear();
-            cycle_node.reserve(n_row);
-            // construct table
-            for (int i = 2; i < n_row; i++){
-                row = (i-1)*n_col;
-                pos = row +n_col;
-                for (int j = 1; j < n_col; j++){
-                    m_dyn_table[pos+j].m_value = m_dyn_table[row+j].m_value;
-                    m_dyn_table[pos+j].m_idx = j;
-                }
-                pos = 0;
-                for (int r = 0; r < m_n_sources; r++){
-                    for(int c = 0; c < m_n_sinks; c++){
-                        //source - > sink
-                        //pos=r*m_n_sinks + c;
-                        if (m_G[pos].m_forward != 0){
-                            //cout << "In forward, r = " << r << "; c = " << c <<endl;
-                            pos2 = row + n_col + (1 + r);
-                            nei_value = m_dyn_table[row + (1 + m_n_sources + c)].m_value + m_G[pos].m_dst;
-                            if (m_dyn_table[pos2].m_value > nei_value){
-                                m_dyn_table[pos2].m_value = nei_value;
-                                m_dyn_table[pos2].m_idx = 1 + m_n_sources + c;
-                            }
-                        }
-                        //sink->source
-                        if(m_G[pos].m_size != 0){
-                            //cout << "In backward, r = " << r << "; c = " << c <<endl;
-                            pos2 = row + n_col + (1 + m_n_sources + c);
-                            nei_value = m_dyn_table[row + (1 + r)].m_value - m_G[pos].m_dst;
-                            if (m_dyn_table[pos2].m_value > nei_value){
-                                m_dyn_table[pos2].m_value = nei_value;
-                                m_dyn_table[pos2].m_idx = 1 + r;
-                            }
-                        }
-                        ++pos;
-                    }
-                    
-                }
-            }
-            
-            min_value = 10000000;
-            // check negative cycle
-            for(int j = 1; j < n_col; j++){
-                if (m_dyn_table[(n_row-2)*n_col+j].m_value != m_dyn_table[(n_row-1)*n_col+j].m_value){
-                    // negative cycle exits
-                    neg_cycle = true;
-                    pos = j;
-                    for (int i = m_n_sources+m_n_sinks+1; i>=1; i--){
-                        hits[pos] = true;
-                        row = i*n_col;
-                        cycle_node.push_back(pos-1);
-                        if (pos <= m_n_sources ){ // it is a sources, and forward
-                            //cout <<  "it is source" <<endl;
-                            pos2 = m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward;
-                            if (min_value > pos2)
-                                min_value = pos2;
-                        }
-                        else{// it is a sink and backward
-                            //cout << "it is sink" <<endl; 
-                            pos2 = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size;
-                            if (min_value > pos2)
-                                min_value = pos2;
-                        }
-                        pos = m_dyn_table[row + pos].m_idx;
-                        
-                        if (hits[pos]){
-                            //cout << "time to eliminate negative cycle" <<endl;
-                            cycle_node.push_back(pos-1);
-                            while(cycle_node[cycle_node.size()-1] != cycle_node[0]){
-                                cycle_node.erase(cycle_node.begin());
-                            }
-                            updateflow(cycle_node, min_value);
-                            break;
-                        }
-                    }	
-                    if(neg_cycle)
-                        break;
-                }
-                pos += (m_n_sources+m_n_sinks+2);
-            }
-            //cout << "Area = " << computeArea() << endl;
-        }   
-        delete[] hits;
         
-        
-    }*/
-    
-    void run3(){
-        cout << "in run" <<endl;
-        int n_row = 2 + m_n_sources + m_n_sinks;
-        int n_col = 1 + m_n_sources + m_n_sinks;
-        int row = 0;
-        int pos = 0;
-        int pos2 = 0;
-        int min_value;
-        int nei_value;
-        int idx;
-        vector<int> cycle_node;
-        bool neg_cycle = true;
-        bool* hits = new bool[1+m_n_sources+m_n_sinks];
-        
-        //bell-forman, matrix.shape = (m_n_sources+m_n_sinks+1, (m_n_sources+m_n_sinks+2))
-        while(neg_cycle){
-            for (int i = 0; i < 1+m_n_sources+m_n_sinks; i++)
-                hits[i] = false;
-            
-            neg_cycle = false;
-
-            cycle_node.clear();
-            cycle_node.reserve(n_row);
-            // construct table
             for (int i = 2; i < n_row; i++){
                 row = (i-1)*n_col;
                 pos = row +n_col;
@@ -522,7 +285,6 @@ public:
                 }
             }
             
-            min_value = 10000000;
             // check negative cycle
             for(int j = 1; j < n_col; j++){
                 if (m_dyn_table[(n_row-2)*n_col+j].first != m_dyn_table[(n_row-1)*n_col+j].first){
@@ -533,27 +295,15 @@ public:
                         hits[pos] = true;
                         row = i*n_col;
                         cycle_node.push_back(pos-1);
-                        if (pos <= m_n_sources ){ // it is a sources, and forward
-                            //cout <<  "it is source" <<endl;
-                            pos2 = m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].second-1-m_n_sources].m_forward;
-                            if (min_value > pos2)
-                                min_value = pos2;
-                        }
-                        else{// it is a sink and backward
-                            //cout << "it is sink" <<endl; 
-                            pos2 = m_G[(m_dyn_table[row + pos].second-1)*m_n_sinks + pos-1-m_n_sources].m_size;
-                            if (min_value > pos2)
-                                min_value = pos2;
-                        }
+                        
                         pos = m_dyn_table[row + pos].second;
                         
                         if (hits[pos]){
-                            //cout << "time to eliminate negative cycle" <<endl;
                             cycle_node.push_back(pos-1);
                             while(cycle_node[cycle_node.size()-1] != cycle_node[0]){
                                 cycle_node.erase(cycle_node.begin());
                             }
-                            updateflow(cycle_node, min_value);
+                            updateflow(cycle_node);
                             break;
                         }
                     }	
@@ -568,116 +318,10 @@ public:
         
         
     }
-    
-    /*
-    void run4(){
-        cout << "in run" <<endl;
-        int n_row = 2 + m_n_sources + m_n_sinks;
-        int n_col = 1 + m_n_sources + m_n_sinks;
-        int row = 0;
-        int pos = 0;
-        int pos2 = 0;
-        int min_value;
-        int nei_value;
-        int idx;
-        vector<int> cycle_node;
-        bool neg_cycle = true;
-        bool* hits = new bool[1+m_n_sources+m_n_sinks];
-        
-        //bell-forman, matrix.shape = (m_n_sources+m_n_sinks+1, (m_n_sources+m_n_sinks+2))
-        while(neg_cycle){
-            for (int i = 0; i < 1+m_n_sources+m_n_sinks; i++)
-                hits[i] = false;
-            
-            neg_cycle = false;
 
-            cycle_node.clear();
-            cycle_node.reserve(n_row);
-            // construct table
-            for (int i = 2; i < n_row; i++){
-                row = (i-1)*n_col;
-                pos = row +n_col;
-                for (int j = 1; j < n_col; j++){
-                    m_dyn_table[pos+j].m_value = m_dyn_table[row+j].m_value;
-                    m_dyn_table[pos+j].m_idx = j;
-                }
-                pos = 0;
-                for (int r = 0; r < m_n_sources; r++){
-                    for(int c = 0; c < m_n_sinks; c++){
-                        //source - > sink
-                        pos=r*m_n_sinks + c;
-                        if (m_G[pos].m_forward != 0){
-                            //cout << "In forward, r = " << r << "; c = " << c <<endl;
-                            pos2 = row + n_col + (1 + r);
-                            nei_value = m_dyn_table[row + (1 + m_n_sources + c)].m_value + m_G[pos].m_dst;
-                            if (m_dyn_table[pos2].m_value > nei_value){
-                                m_dyn_table[pos2].m_value = nei_value;
-                                m_dyn_table[pos2].m_idx = 1 + m_n_sources + c;
-                            }
-                        }
-                        //sink->source
-                        if(m_G[pos].m_size != 0){
-                            //cout << "In backward, r = " << r << "; c = " << c <<endl;
-                            pos2 = row + n_col + (1 + m_n_sources + c);
-                            nei_value = m_dyn_table[row + (1 + r)].m_value - m_G[pos].m_dst;
-                            if (m_dyn_table[pos2].m_value > nei_value){
-                                m_dyn_table[pos2].m_value = nei_value;
-                                m_dyn_table[pos2].m_idx = 1 + r;
-                            }
-                        }
-                    }
-                    
-                }
-            }
-            //printTable();
-            min_value = 10000000;
-            // check negative cycle
-            for(int j = 1; j < n_col; j--){
-                if (m_dyn_table[(n_row-2)*n_col+j].m_value != m_dyn_table[(n_row-1)*n_col+j].m_value){
-                    // negative cycle exits
-                    neg_cycle = true;
-                    pos = j;
-                    for (int i = m_n_sources+m_n_sinks+1; i>=1; i--){
-                        hits[pos] = true;
-                        row = i*n_col;
-                        cycle_node.push_back(pos-1);
-                        if (pos <= m_n_sources ){ // it is a sources, and forward
-                            //cout <<  "it is source" <<endl;
-                            if (min_value > m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward)
-                                min_value = m_G[(pos-1)*m_n_sinks + m_dyn_table[row + pos].m_idx-1-m_n_sources].m_forward;
-                        }
-                        else{// it is a sink and backward
-                            //cout << "it is sink" <<endl; 
-                            if (min_value > m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size)
-                                min_value = m_G[(m_dyn_table[row + pos].m_idx-1)*m_n_sinks + pos-1-m_n_sources].m_size;
-                        }
-                        pos = m_dyn_table[row + pos].m_idx;
-                        
-                        if (hits[pos]){
-                            //cout << "time to eliminate negative cycle" <<endl;
-                            cycle_node.push_back(pos-1);
-                            while(cycle_node[cycle_node.size()-1] != cycle_node[0]){
-                                cycle_node.erase(cycle_node.begin());
-                            }
-                            updateflow(cycle_node, min_value);
-                            break;
-                        }
-                    }	
-                    if(neg_cycle)
-                        break;
-                }
-                pos += (m_n_sources+m_n_sinks+2);
-            }
-            //cout << "Area = " << computeArea() << endl;
-        }   
-        delete[] hits;
-        
-        
-    }*/
-    
     void writeGraph(const string& out_file_name){
         int row = 0;
-        m_total_flow = 0;
+        //m_total_flow = 0;
         ofstream outfile;
         outfile.open(out_file_name.c_str());
         outfile << computeArea() <<endl;
@@ -687,7 +331,7 @@ public:
 
         for(int i = 0; i < sortG.size(); i++){
             if (sortG[i].m_size != 0){
-                m_total_flow += sortG[i].m_size;
+                //m_total_flow += sortG[i].m_size;
                 outfile << sortG[i].m_s_x << ' ' << sortG[i].m_s_y << ' '
                         << sortG[i].m_t_x   << ' ' << sortG[i].m_t_y   << ' '
                         << sortG[i].m_size << endl;
@@ -695,30 +339,33 @@ public:
         }
     }
 
-    void updateflow(const vector<int>& cycle_node, const int& min_flow){// update flow
-        int head = 0;
-        int tail = 0; 
-        //for(int i = 0; i < cycle_node.size(); i++){
-        //    cout << cycle_node[i] << " " ;
-        //}
-        //cout << endl;
-        for(int i = 0; i < cycle_node.size()-1; i++ ){
+    void updateflow(const vector<int>& cycle_node){
+        //find min value
+        vector<cyclePair> cycle_edge;
+        //vector<bool> fflow;
+        int min_flow = 1000000000;
+        int pos = 0;
+        cycle_edge.reserve(cycle_node.size()-1);
+        for(int i = 0; i < cycle_node.size()-1; i++){
             if (cycle_node[i] < m_n_sources){//source and forward
-                
-                tail = cycle_node[i];// tail = source
-                head = cycle_node[i+1] - m_n_sources;// head = sinks
-                //cout << "i = " << i << " : source -> sink" << "(" << tail << "," << head << ")"<< endl;
-                m_G[tail*m_n_sinks+head].updateflow(min_flow, true);
+                pos = cycle_node[i]*m_n_sinks+(cycle_node[i+1] - m_n_sources);
+                cycle_edge.push_back(edgePair(pos, true));
+                if (m_G[pos].m_forward < min_flow)
+                    min_flow = m_G[pos].m_forward;
             }
-            else{// sink and backward
-                
-                tail = cycle_node[i] - m_n_sources; //sink
-                head = cycle_node[i+1]; //source
-                //cout << "i = " << i << " : sink -> source" << "(" << tail << "," << head << ")"<<endl;
-                m_G[head*m_n_sinks+tail].updateflow(min_flow, false);
+            else {
+                pos = cycle_node[i+1]*m_n_sinks+(cycle_node[i] - m_n_sources);
+                cycle_edge.push_back(edgePair(pos, false));
+                if (m_G[pos].m_size < min_flow)
+                    min_flow = m_G[pos].m_size;
             }
         }
-        cout << computeArea() <<endl;
+        for(int i = 0; i < cycle_edge.size(); i++){
+            if(cycle_edge[i].second)
+                m_G[cycle_edge[i].first].updateflow(min_flow, true);
+            else    
+                m_G[cycle_edge[i].first].updateflow(min_flow, false);
+        }
     }
 
     void printGraph(){// DEBUGGING FUNCTION
@@ -750,6 +397,7 @@ public:
         
         return area;
     }
+
     void check(){// DEBUGGING FUNCTION
         int* cal_source = new int[m_n_sources];
         int* cal_sink   = new int[m_n_sinks];
@@ -761,6 +409,8 @@ public:
             cal_sink[i] = 0;
         for(int i = 0; i < m_n_sources; i++){
             for(int j = 0; j < m_n_sinks; j++){
+                if(m_G[row+j].m_size<0)
+                    cout << "flow < 0 !!!" <<endl;
                 cal_source[i] += m_G[row+j].m_size;
                 cal_sink[j] += m_G[row+j].m_size;
             }
@@ -781,7 +431,7 @@ public:
         delete[] cal_source;
         delete[] cal_sink;
     }
- 
+    /*
     void printTable(){// DEBUGGING FUNCTION
         cout << "-------------- print distance ----------------" <<endl;
         for(int i = 0; i < m_n_sources+m_n_sinks+2; i++){
@@ -801,7 +451,7 @@ public:
         }
 
 
-    }
+    }*/
     
     // public data member
     int m_total_flow;
@@ -842,10 +492,9 @@ int main(int argc, char** argv)
     cout << "total flow when reading Graph : " << G.m_total_flow <<endl;
     cout << "total area after reading Graph : " << G.computeArea() <<endl;
     //G.printGraph(); // correct
-    //G.check();
-    G.run2();
+    G.run();
     //G.printGraph();
-    //G.check();
+    G.check();
     G.writeGraph(out_file_name);
     cout << "total flow after algorithm Graph : " << G.m_total_flow <<endl;
     return 0;

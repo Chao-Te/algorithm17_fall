@@ -27,7 +27,8 @@
         "__tree": "cpp",
         "initializer_list": "cpp",
         "map": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "ios": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
